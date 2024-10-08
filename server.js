@@ -9,6 +9,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'your-secret-key';
+const flash = require('connect-flash');
+const session = require('express-session');
+const methodOverride = require('method-override');
 
 // Middleware
 app.use(express.json());
@@ -16,6 +19,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'uploads')));
+
+// use flash for alert
+app.use(session({
+  secret: 'secretKey',
+  resave: false,
+  saveUninitialized: true
+}));
+app.use(flash());
+// Use method override middleware
+app.use(methodOverride('_method'));
 
 // MongoDB connection
 mongoose.connect('mongodb+srv://ashikurjhalak:jholok7510748209@cluster0.lgpuqkk.mongodb.net/?retryWrites=true&w=majority&appName=AtlasApp')
@@ -127,8 +140,11 @@ app.get('/profile', authenticateJWT, async (req, res) => {
     if (!student) {
       return res.status(404).send('Student not found');
     }
-    // res.json(student);
-    res.render('profile', { student });
+    res.render('profile', { 
+      student, 
+      success: req.flash('success'), 
+      error: req.flash('error') 
+    });
   } catch (error) {
     res.status(500).send('Error fetching profile');
   }
@@ -141,12 +157,15 @@ app.put('/profile', authenticateJWT, async (req, res) => {
     const student = await Student.findByIdAndUpdate(req.student.id, { name, email }, { new: true });
     
     if (!student) {
-      return res.status(404).send('Student not found');
+      req.flash('error', 'Student not found');
+      return res.redirect('/profile');
     }
-    
-    res.send('Profile updated successfully');
+
+    req.flash('success', 'Profile updated successfully');
+    res.redirect('/profile');
   } catch (error) {
-    res.status(500).send('Error updating profile');
+    req.flash('error', 'Error updating profile');
+    res.redirect('/profile');
   }
 });
 
@@ -154,12 +173,15 @@ app.put('/profile', authenticateJWT, async (req, res) => {
 app.post('/upload', authenticateJWT, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).send('No file uploaded');
+      req.flash('error', 'No file uploaded');
+      return res.redirect('/profile');
     }
     await Student.findByIdAndUpdate(req.student.id, { profilePicture: req.file.filename });
-    res.send('File uploaded successfully');
+    req.flash('success', 'File uploaded successfully');
+    res.redirect('/profile');
   } catch (error) {
-    res.status(500).send('Error uploading file');
+    req.flash('error', 'Error uploading file');
+    res.redirect('/profile');
   }
 });
 
@@ -167,47 +189,43 @@ app.post('/upload', authenticateJWT, upload.single('file'), async (req, res) => 
 app.get('/file/:filename', authenticateJWT, (req, res) => {
   const filePath = path.join(__dirname, 'uploads', req.params.filename);
   res.sendFile(filePath, (err) => {
-    if (err) {
-      res.status(404).send('File not found');
+      if (err)
+      {
+        // res.status(404).send('<div class="alert alert-danger" role="alert">File not uploaded!</div>');
+      req.flash('error', 'No file uploaded');
+      return res.redirect('/profile');
     }
   });
 });
-
-// // 7. File read API
-// app.get('/file/:filename', authenticateJWT, (req, res) => {
-//   const filePath = path.join(__dirname, 'uploads', req.params.filename);
-  
-//   fs.access(filePath, fs.constants.F_OK, (err) => {
-//     if (err) {
-//       return res.status(404).send('File not found');
-//     }
-//     res.sendFile(filePath);
-//   });
-// });
 
 // 8. Single file delete API
 app.delete('/file/:filename', authenticateJWT, async (req, res) => {
   try {
     const student = await Student.findById(req.student.id);
-    if (student.profilePicture !== req.params.filename) {
-      return res.status(403).send('Not authorized to delete this file');
+    if (!student || !student.profilePicture) {
+      req.flash('error', 'No profile picture found for deletion');
+      return res.redirect('/profile');
     }
+
+    const filePath = path.join(__dirname, 'uploads', student.profilePicture);
     
-    const filePath = path.join(__dirname, 'uploads', req.params.filename);
     fs.unlink(filePath, async (err) => {
       if (err) {
-        return res.status(500).send('Error deleting file');
+        req.flash('error', 'Error deleting file');
+        return res.redirect('/profile');
       }
+
+      // Remove reference to profile picture from the student record
       await Student.findByIdAndUpdate(req.student.id, { $unset: { profilePicture: 1 } });
-      res.send('File deleted successfully');
+      
+      req.flash('success', 'File deleted successfully');
+      res.redirect('/profile');
     });
   } catch (error) {
-    res.status(500).send('Error deleting file');
+    req.flash('error', 'Error deleting file');
+    res.redirect('/profile');
   }
 });
-
-
-// Other routes (profile update, file upload, file delete) remain unchanged
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}/login`);

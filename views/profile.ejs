@@ -11,7 +11,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 80vh;
+      height: 95vh;
       background-color: #f8f9fa;
     }
 
@@ -26,64 +26,60 @@
 </head>
 
 <body>
-  <div class="card shadow-sm m-4 p-3">
-    <div class="card-header text-center">
-      <h2>Profile</h2>
-    </div>
 
-    <div class="card-body text-center">
-      <img src="/uploads/<%= student.profilePicture %>" alt="Profile Picture" class="rounded-circle mb-3" width="150" height="150" onerror="this.src='https://via.placeholder.com/150';" />
-      <h4 class="card-title"><%= student.name %></h4>
-      <p class="card-text">
-        <strong>Email:</strong> <%= student.email %>
-      </p>
-
-      <% if (student.profilePicture) { %>
-      <a href="/file/<%= student.profilePicture %>" class="btn btn-info">Download Profile Picture</a>
-      <% } %>
+  <div class="container">
+    <!-- Flash Messages -->
+    <% if (success) { %>
+    <div class="alert alert-success" id="success-alert" role="alert">
+      <%= success %>
     </div>
+    <% } %>
 
-    <div class="card-body">
-      <!-- File Upload Form -->
-      <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
-        <div class="mb-3">
-          <label for="file" class="form-label">Upload Profile Picture</label>
-          <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Upload</button>
-      </form>
+    <% if (error) { %>
+    <div class="alert alert-danger" id="success-alert" role="alert">
+      <%= error %>
     </div>
-    <div class="card-footer text-center">
-      <a href="/logout" class="btn btn-danger">Logout</a>
+    <% } %>
+    <div class="card shadow-sm m-4 p-3">
+      <div class="card-header text-center">
+        <h2>Profile</h2>
+      </div>
+
+      <div class="card-body text-center">
+        <img src="/file/<%= student.profilePicture %>" alt="Profile Picture" class="rounded-circle mb-3" width="150" height="150" onerror="this.src='https://via.placeholder.com/150';" />
+        <h4 class="card-title"><%= student.name %></h4>
+        <p class="card-text">
+          <strong>Email:</strong> <%= student.email %>
+        </p>
+
+        <% if (student.profilePicture) { %>
+        <a href="/file/<%= student.profilePicture %>" class="btn btn-info" target="_blank">Download Profile Picture</a>
+        <br /><br />
+        <form action="/file/<%= student.profilePicture %>?_method=DELETE" method="POST" class="d-inline">
+          <button type="submit" class="btn btn-danger">Delete Profile Picture</button>
+        </form>
+        <% } %>
+
+      </div>
+
+      <div class="card-body">
+        <!-- File Upload Form -->
+        <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
+          <div class="mb-3">
+            <label for="file" class="form-label">Upload Profile Picture</label>
+            <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+      </div>
+      <div class="card-footer text-center">
+        <a href="/logout" class="btn btn-danger">Logout</a>
+      </div>
     </div>
   </div>
 
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-  <script>
-    document.getElementById('uploadForm').addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      const formData = new FormData(this);
-      fetch('/upload', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert(data.success);
-            window.location.href = '/profile'; // Redirect to profile
-          } else if (data.error) {
-            alert(data.error);
-          }
-        })
-        .catch(error => {
-          alert('Error uploading file');
-        });
-    });
-  </script>
 </body>
 
 </html>

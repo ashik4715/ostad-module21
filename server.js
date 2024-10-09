@@ -29,6 +29,13 @@ app.use(session({
 app.use(flash());
 // Use method override middleware
 app.use(methodOverride('_method'));
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' https://vercel.live"
+  );
+  next();
+});
 
 // MongoDB connection
 mongoose.connect('mongodb+srv://ashikurjhalak:jholok7510748209@cluster0.lgpuqkk.mongodb.net/?retryWrites=true&w=majority&appName=AtlasApp')

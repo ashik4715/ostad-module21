@@ -96,4 +96,4 @@ sw.*
 
 # Vercel
 .vercel
-.vercel
+.env

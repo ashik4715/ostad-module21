@@ -53,8 +53,8 @@
         </p>
 
         <% if (student.profilePicture) { %>
-        <a href="/file/<%= student.profilePicture %>" class="btn btn-info" target="_blank">Download Profile Picture</a>
-        <br /><br />
+          <a href="/file/<%= student.profilePicture %>" class="btn btn-info" download>Download Profile Picture</a>
+          <br /><br />
         <form action="/file/<%= student.profilePicture %>?_method=DELETE" method="POST" class="d-inline">
           <button type="submit" class="btn btn-danger">Delete Profile Picture</button>
         </form>
